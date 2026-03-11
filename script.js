@@ -119,7 +119,7 @@ function processPrediction(prediction, isFromFile = false) {
             const preview = document.getElementById('file-preview-container');
             if(preview) preview.innerHTML = '';
             
-        }, 4000); // 4000 = 4 segundos. Pode aumentar se achar rápido.
+        }, 10000); // 4000 = 4 segundos. Pode aumentar se achar rápido.
     }
 }
 // ==========================================
