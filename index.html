@@ -5,45 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catraca Inteligente - Controle de EPI</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f1f5f9;
-            color: #1e293b;
-            text-align: center;
-            padding: 20px;
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f5f9; color: #1e293b; text-align: center; padding: 20px; }
         h1 { margin-bottom: 5px; color: #0f172a; }
         p { margin-bottom: 20px; color: #64748b; }
-        button {
-            background-color: #2563eb;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 18px;
-            border-radius: 8px;
-            cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            font-weight: bold;
-        }
+        button { background-color: #2563eb; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 8px; cursor: pointer; font-weight: bold; }
         button:hover { background-color: #1d4ed8; }
-        #webcam-container {
-            margin: 20px auto;
-            border: 5px solid #cbd5e1;
-            border-radius: 10px;
-            display: inline-block;
-            overflow: hidden;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
-        #status-box {
-            font-size: 24px;
-            font-weight: bold;
-            margin: 15px auto;
-            padding: 20px;
-            border-radius: 8px;
-            max-width: 500px;
-            text-align: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
+        #webcam-container { margin: 20px auto; border: 5px solid #cbd5e1; border-radius: 10px; display: inline-block; overflow: hidden; }
+        #status-box { font-size: 24px; font-weight: bold; margin: 15px auto; padding: 20px; border-radius: 8px; max-width: 500px; text-align: center; }
         .aguardando { background-color: #e2e8f0; color: #475569; border: 2px solid #cbd5e1; }
         .liberado { background-color: #dcfce7; color: #166534; border: 2px solid #22c55e; }
         .bloqueado { background-color: #fee2e2; color: #991b1b; border: 2px solid #ef4444; }
@@ -62,58 +30,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
-    <script type="text/javascript">
-        
-        // =========================================================
-        // AQUI ESTÁ A MUDANÇA: O código agora aponta para a pasta local
-        const modelURL = "./modelo/model.json";
-        const metadataURL = "./modelo/metadata.json";
-        // =========================================================
-
-        let model, webcam, maxPredictions, statusBox;
-
-        async function init() {
-            statusBox = document.getElementById("status-box");
-            statusBox.innerHTML = "Carregando modelo de IA...";
-
-            // Carrega os arquivos que estão na sua pasta
-            model = await tmImage.load(modelURL, metadataURL);
-            maxPredictions = model.getTotalClasses();
-
-            const flip = true; 
-            webcam = new tmImage.Webcam(400, 400, flip);
-            await webcam.setup(); 
-            await webcam.play();
-            window.requestAnimationFrame(loop);
-
-            document.getElementById("webcam-container").appendChild(webcam.canvas);
-        }
-
-        async function loop() {
-            webcam.update();
-            await predict();
-            window.requestAnimationFrame(loop);
-        }
-
-        async function predict() {
-            const prediction = await model.predictTopK(webcam.canvas, 1);
-            
-            let classe = prediction[0].className.toLowerCase();
-            let probabilidade = (prediction[0].probability * 100).toFixed(0);
-
-            if(classe.includes("com epi") || classe.includes("capacete")) {
-                statusBox.className = "liberado";
-                statusBox.innerHTML = `✅ ACESSO LIBERADO <br><span class="certeza">EPI Detectado. Bom trabalho! (${probabilidade}%)</span>`;
-            } 
-            else if(classe.includes("sem epi") || classe.includes("sem capacete")) {
-                statusBox.className = "bloqueado";
-                statusBox.innerHTML = `⛔ ACESSO BLOQUEADO <br><span class="certeza">Por favor, coloque o capacete e os óculos. (${probabilidade}%)</span>`;
-            } 
-            else {
-                statusBox.className = "aguardando";
-                statusBox.innerHTML = `Aproxime-se da catraca... <br><span class="certeza">Aguardando funcionário</span>`;
-            }
-        }
-    </script>
+    
+    <script src="script.js"></script>
 </body>
 </html>
