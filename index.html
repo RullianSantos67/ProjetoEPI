@@ -5,33 +5,123 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catraca Inteligente - Controle de EPI</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f5f9; color: #1e293b; text-align: center; padding: 20px; }
-        h1 { margin-bottom: 5px; color: #0f172a; }
-        p { margin-bottom: 20px; color: #64748b; }
-        button { background-color: #2563eb; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 8px; cursor: pointer; font-weight: bold; margin: 5px; }
-        button:hover { background-color: #1d4ed8; }
-        #webcam-container { margin: 20px auto; border: 5px solid #cbd5e1; border-radius: 10px; display: inline-block; overflow: hidden; }
-        #label-container { margin: 15px auto; max-width: 500px; text-align: center; font-size: 18px; }
+        /* Variáveis de cores para facilitar */
+        :root {
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-radius: 16px;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        body { 
+            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-main); 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 40px 20px;
+        }
+
+        /* Títulos mais limpos */
+        h1 { margin: 0 0 10px 0; font-size: 2.2rem; letter-spacing: -0.5px; color: #1e293b; }
+        p.subtitle { color: var(--text-muted); font-size: 1.1rem; margin-bottom: 30px; }
+
+        /* Botões modernos com efeito de elevação */
+        .controls { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; justify-content: center; }
+        button { 
+            background-color: var(--primary); 
+            color: white; 
+            border: none; 
+            padding: 14px 24px; 
+            font-size: 16px; 
+            border-radius: 10px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.25);
+        }
+        button:hover { 
+            background-color: var(--primary-hover); 
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(59, 130, 246, 0.35);
+        }
+
+        /* Container da Câmera parecendo uma tela */
+        #webcam-container { 
+            background-color: var(--card-bg);
+            padding: 12px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 200px;
+        }
+        #webcam-container canvas { border-radius: 10px; }
+        
+        #label-container { width: 100%; max-width: 450px; margin-bottom: 30px; }
+
+        /* Área de Upload com borda pontilhada estilosa */
+        .upload-section {
+            background-color: var(--card-bg);
+            border: 2px dashed #cbd5e1;
+            border-radius: var(--border-radius);
+            padding: 30px 20px;
+            width: 100%;
+            max-width: 450px;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+        .upload-section:hover { border-color: var(--primary); background-color: #f8fafc; }
+        .upload-section h3 { margin-top: 0; font-size: 1.2rem; color: #334155; }
+        
+        /* Estilizando o botão de escolher arquivo */
+        ::file-selector-button {
+            background-color: #e2e8f0;
+            border: none;
+            color: #475569;
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-right: 15px;
+            transition: all 0.2s;
+        }
+        ::file-selector-button:hover { background-color: #cbd5e1; color: #1e293b; }
     </style>
 </head>
 <body>
 
-    <h1>🚧 Catraca de Segurança IA</h1>
-    <p>Verificação de Equipamento de Proteção Individual (EPI)</p>
+    <h1>🛡️ Sistema de Acesso Seguro</h1>
+    <p class="subtitle">Verificação Inteligente de EPI na Catraca</p>
     
-    <div>
-        <button type="button" onclick="init()">Ligar Câmera</button>
-        <button type="button" onclick="switchCamera()">Alternar Câmera</button>
+    <div class="controls">
+        <button type="button" onclick="init()">📹 Ligar Câmera</button>
+        <button type="button" style="background-color: #475569;" onclick="switchCamera()">🔄 Inverter Câmera</button>
     </div>
     
-    <div id="webcam-container"></div>
+    <div id="webcam-container">
+        </div>
     
-    <div id="label-container">Aguardando inicialização...</div>
+    <div id="label-container">
+        <div style="background: #ffffff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); color: #64748b;">
+            Sistema aguardando inicialização...
+        </div>
+    </div>
 
-    <div style="margin-top: 20px; border: 1px dashed #ccc; padding: 10px; max-width: 500px; margin-left: auto; margin-right: auto;">
-        <h3>Testar com Arquivo (Dataset)</h3>
+    <div class="upload-section">
+        <h3>📂 Testar com Imagem (Upload)</h3>
+        <p style="color: #64748b; font-size: 0.9rem; margin-top: -10px; margin-bottom: 15px;">Sem câmera? Envie uma foto para testar a IA.</p>
         <input type="file" id="file-input" accept="image/*" onchange="predictFromFile()">
-        <div id="file-preview-container" style="margin-top: 10px;"></div>
+        <div id="file-preview-container" style="margin-top: 15px; display: flex; justify-content: center;"></div>
     </div> 
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
