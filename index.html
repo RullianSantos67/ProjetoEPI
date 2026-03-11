@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catraca Inteligente - Controle de EPI</title>
     <style>
-        /* Variáveis de cores para facilitar */
         :root {
             --primary: #3b82f6;
             --primary-hover: #2563eb;
@@ -21,108 +20,145 @@
             font-family: 'Inter', system-ui, -apple-system, sans-serif; 
             background-color: var(--bg-color); 
             color: var(--text-main); 
+            margin: 0;
+            padding: 0;
+            height: 100vh; /* Ocupa exatamente 100% da altura da tela do PC */
             display: flex;
             flex-direction: column;
-            align-items: center;
-            margin: 0;
-            padding: 40px 20px;
+            overflow: hidden; /* Remove a barra de rolagem lateral no PC */
         }
 
-        /* Títulos mais limpos */
-        h1 { margin: 0 0 10px 0; font-size: 2.2rem; letter-spacing: -0.5px; color: #1e293b; }
-        p.subtitle { color: var(--text-muted); font-size: 1.1rem; margin-bottom: 30px; }
-
-        /* Botões modernos com efeito de elevação */
-        .controls { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; justify-content: center; }
-        button { 
-            background-color: var(--primary); 
-            color: white; 
-            border: none; 
-            padding: 14px 24px; 
-            font-size: 16px; 
-            border-radius: 10px; 
-            cursor: pointer; 
-            font-weight: 600; 
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.25);
-        }
-        button:hover { 
-            background-color: var(--primary-hover); 
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(59, 130, 246, 0.35);
-        }
-
-        /* Container da Câmera parecendo uma tela */
-        #webcam-container { 
+        /* Barra superior estilo Painel de Controle */
+        .header {
             background-color: var(--card-bg);
-            padding: 12px;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            z-index: 10;
+        }
+        .header h1 { margin: 0; font-size: 1.5rem; color: #1e293b; display: flex; align-items: center; gap: 10px; }
+        .header p { margin: 0; font-size: 0.9rem; color: var(--text-muted); }
+        
+        .controls { display: flex; gap: 10px; }
+        button { 
+            background-color: var(--primary); color: white; border: none; padding: 10px 20px; 
+            font-size: 14px; border-radius: 8px; cursor: pointer; font-weight: 600; 
+            transition: all 0.2s ease; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.25);
+        }
+        button:hover { background-color: var(--primary-hover); transform: translateY(-2px); }
+        .btn-secondary { background-color: #475569; box-shadow: 0 4px 6px rgba(71, 85, 105, 0.25); }
+        .btn-secondary:hover { background-color: #334155; }
+
+        /* Layout principal dividindo a tela */
+        .main-content {
+            display: flex;
+            flex: 1;
+            padding: 20px;
+            gap: 20px;
+            box-sizing: border-box;
+            height: calc(100vh - 70px); /* Pega o espaço que sobrou do cabeçalho */
+        }
+
+        /* Área da Câmera (Esquerda, GIGANTE) */
+        .camera-panel {
+            flex: 2.5; /* Faz a câmera ocupar 70% da tela */
+            background-color: #000; /* Fundo preto estilo monitor */
             border-radius: var(--border-radius);
             box-shadow: var(--shadow);
-            margin-bottom: 25px;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 200px;
+            overflow: hidden;
+            position: relative;
         }
-        #webcam-container canvas { border-radius: 10px; }
         
-        #label-container { width: 100%; max-width: 450px; margin-bottom: 30px; }
+        #webcam-container { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
+        
+        /* O SEGREDO: Faz o canvas da câmera esticar sem distorcer a imagem */
+        #webcam-container canvas { 
+            width: 100% !important; 
+            height: 100% !important; 
+            object-fit: contain; 
+        }
 
-        /* Área de Upload com borda pontilhada estilosa */
+        /* Painel Lateral (Direita, com os resultados) */
+        .side-panel {
+            flex: 1; /* Ocupa os 30% restantes da tela */
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-width: 300px;
+            max-width: 450px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        #label-container { width: 100%; }
+
         .upload-section {
             background-color: var(--card-bg);
             border: 2px dashed #cbd5e1;
             border-radius: var(--border-radius);
-            padding: 30px 20px;
-            width: 100%;
-            max-width: 450px;
-            box-sizing: border-box;
-            transition: all 0.3s ease;
+            padding: 25px 20px;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            text-align: center;
         }
-        .upload-section:hover { border-color: var(--primary); background-color: #f8fafc; }
-        .upload-section h3 { margin-top: 0; font-size: 1.2rem; color: #334155; }
+        .upload-section h3 { margin-top: 0; margin-bottom: 5px; font-size: 1.1rem; color: #334155; }
         
-        /* Estilizando o botão de escolher arquivo */
         ::file-selector-button {
-            background-color: #e2e8f0;
-            border: none;
-            color: #475569;
-            padding: 10px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            margin-right: 15px;
-            transition: all 0.2s;
+            background-color: #e2e8f0; border: none; color: #475569; padding: 10px;
+            border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s;
+            width: 100%; margin-bottom: 15px; font-size: 14px;
         }
         ::file-selector-button:hover { background-color: #cbd5e1; color: #1e293b; }
+
+        /* Inteligência para celular: Se a tela for pequena, ele empilha tudo */
+        @media (max-width: 850px) {
+            body { height: auto; overflow: auto; }
+            .header { flex-direction: column; gap: 15px; text-align: center; }
+            .main-content { flex-direction: column; height: auto; }
+            .camera-panel { min-height: 400px; width: 100%; }
+            .side-panel { max-width: 100%; }
+        }
     </style>
 </head>
 <body>
 
-    <h1>🛡️ Sistema de Acesso Seguro</h1>
-    <p class="subtitle">Verificação Inteligente de EPI na Catraca</p>
-    
-    <div class="controls">
-        <button type="button" onclick="init()">📹 Ligar Câmera</button>
-        <button type="button" style="background-color: #475569;" onclick="switchCamera()">🔄 Inverter Câmera</button>
-    </div>
-    
-    <div id="webcam-container">
+    <div class="header">
+        <div>
+            <h1>🛡️ Sistema de Acesso Seguro</h1>
+            <p>Verificação Inteligente de EPI na Catraca</p>
         </div>
-    
-    <div id="label-container">
-        <div style="background: #ffffff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); color: #64748b;">
-            Sistema aguardando inicialização...
+        <div class="controls">
+            <button type="button" onclick="init()">📹 Ligar Câmera</button>
+            <button type="button" class="btn-secondary" onclick="switchCamera()">🔄 Inverter</button>
         </div>
     </div>
+    
+    <div class="main-content">
+        <div class="camera-panel">
+            <div id="webcam-container">
+                <span style="color: #64748b; font-weight: 600; font-size: 1.5rem;">Câmera Desligada</span>
+            </div>
+        </div>
 
-    <div class="upload-section">
-        <h3>📂 Testar com Imagem (Upload)</h3>
-        <p style="color: #64748b; font-size: 0.9rem; margin-top: -10px; margin-bottom: 15px;">Sem câmera? Envie uma foto para testar a IA.</p>
-        <input type="file" id="file-input" accept="image/*" onchange="predictFromFile()">
-        <div id="file-preview-container" style="margin-top: 15px; display: flex; justify-content: center;"></div>
-    </div> 
+        <div class="side-panel">
+            <div id="label-container">
+                <div style="background: #ffffff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); color: #64748b; text-align: center;">
+                    Sistema aguardando inicialização...
+                </div>
+            </div>
+
+            <div class="upload-section">
+                <h3>📂 Testar com Imagem</h3>
+                <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 15px;">Sem câmera? Envie uma foto para testar a IA.</p>
+                <input type="file" id="file-input" accept="image/*" onchange="predictFromFile()">
+                <div id="file-preview-container" style="margin-top: 15px; display: flex; justify-content: center;"></div>
+            </div> 
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
