@@ -3,6 +3,7 @@ let currentFacingMode = "user";
 let lastUpdateTime = 0;
 let model, webcam, labelContainer, maxPredictions;
 
+// Variável que trava a catraca
 let isPaused = false; 
 
 async function loadModel() {
@@ -49,7 +50,7 @@ async function loop() {
     if (webcam && webcam.canvas) {
         webcam.update(); 
         
-        // Só analisa a câmera se o sistema NÃO estiver pausado no resultado
+        // Só analisa a câmera se o sistema NÃO estiver pausado
         if (!isPaused) {
             await predict();
         }
@@ -57,6 +58,7 @@ async function loop() {
     window.requestAnimationFrame(loop);
 }
 
+// === LÓGICA DE EXIBIÇÃO E TRAVA ===
 function processPrediction(prediction, isFromFile = false) {
     let highestProb = 0;
     let bestClass = "";
@@ -71,8 +73,9 @@ function processPrediction(prediction, isFromFile = false) {
     let statusColor = "#10b981"; // Verde
     let icone = "✅";
     let classNameLower = bestClass.toLowerCase();
+    let textoExibicao = bestClass.toUpperCase();
     
-    // Configura as cores e ícones baseados na classe
+    // Configura as cores e ícones
     if (classNameLower.includes("sem") && !classNameLower.includes("pessoa")) {
         statusColor = "#ef4444"; // Vermelho
         icone = "⛔";
@@ -80,27 +83,36 @@ function processPrediction(prediction, isFromFile = false) {
     else if (classNameLower.includes("pessoa")) {
         statusColor = "#94a3b8"; // Cinza
         icone = "⏳";
-        bestClass = "Aguardando Câmera...";
+        textoExibicao = "AGUARDANDO CÂMERA...";
     }
     
-    // Verifica se deve TRAVAR a tela (Se enviou foto ou se achou uma pessoa na câmera com muita certeza)
-    if (isFromFile || (!classNameLower.includes("pessoa") && highestProb > 0.60)) {
+    // TRAVA A TELA: Se enviou foto OU se achou alguém (Com ou Sem EPI) com mais de 40% de certeza
+    if (isFromFile || (!classNameLower.includes("pessoa") && highestProb > 0.40)) {
         isPaused = true;
     }
     
-    // Desenha o cartão de resultado. Note que agora ele cria um botão se estiver pausado!
-    labelContainer.innerHTML = `
+    // Monta o cartão visual
+    let htmlCartao = `
         <div style="background: #ffffff; padding: 25px 20px; border-radius: 16px; border-left: 8px solid ${statusColor}; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); text-align: left;">
             <strong style="color: #64748b; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">Status da Catraca</strong>
             <h2 style="color: ${statusColor}; margin: 8px 0 15px 0; font-size: 2rem; display: flex; align-items: center; gap: 10px;">
-                ${icone} ${bestClass.toUpperCase()}
+                ${icone} ${textoExibicao}
             </h2>
             <div style="background: #f1f5f9; display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; color: #475569;">
                 Confiança da IA: <span>${(highestProb * 100).toFixed(1)}%</span>
-            </div>
+            </div>`;
             
-            ${isPaused ? `<button onclick="resumeScanning()" style="width: 100%; margin-top: 15px; background-color: #3b82f6; padding: 15px; font-size: 16px; border-radius: 8px; color: white; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.25);">🔄 Liberar para o Próximo</button>` : ''}
-        </div>`;
+    // Se a tela travou, adiciona o botão de liberar
+    if (isPaused) {
+        htmlCartao += `
+            <button onclick="resumeScanning()" style="width: 100%; margin-top: 20px; background-color: #3b82f6; padding: 15px; font-size: 16px; border-radius: 8px; color: white; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.25); transition: all 0.2s ease;">
+                🔄 LIBERAR PARA O PRÓXIMO
+            </button>`;
+    }
+    
+    htmlCartao += `</div>`; 
+    
+    labelContainer.innerHTML = htmlCartao;
 }
 
 // === FUNÇÃO QUE DESTRAVA A TELA QUANDO CLICA NO BOTÃO ===
