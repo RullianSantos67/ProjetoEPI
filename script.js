@@ -3,7 +3,6 @@ let currentFacingMode = "user";
 let lastUpdateTime = 0;
 let model, webcam, labelContainer, maxPredictions;
 
-// Variável mágica que cria o efeito de "Catraca Real"
 let isPaused = false; 
 
 async function loadModel() {
@@ -50,7 +49,7 @@ async function loop() {
     if (webcam && webcam.canvas) {
         webcam.update(); 
         
-        // Só faz a análise se a catraca não estiver "travada" exibindo um resultado
+        // Só analisa a câmera se o sistema NÃO estiver pausado no resultado
         if (!isPaused) {
             await predict();
         }
@@ -58,12 +57,10 @@ async function loop() {
     window.requestAnimationFrame(loop);
 }
 
-// === NOVA LÓGICA DA CATRACA INTELIGENTE ===
 function processPrediction(prediction, isFromFile = false) {
     let highestProb = 0;
     let bestClass = "";
     
-    // Descobre qual foi o maior resultado
     for (let i = 0; i < maxPredictions; i++) {
         if (prediction[i].probability > highestProb) {
             highestProb = prediction[i].probability;
@@ -71,23 +68,27 @@ function processPrediction(prediction, isFromFile = false) {
         }
     }
     
-    // Configuração das Cores e Ícones
-    let statusColor = "#10b981"; // Verde (Liberado)
+    let statusColor = "#10b981"; // Verde
     let icone = "✅";
+    let classNameLower = bestClass.toLowerCase();
     
-    // Se a IA disse "Sem EPI" ou "Sem capacete" (Cores de Bloqueado)
-    if (bestClass.toLowerCase().includes("sem") && !bestClass.toLowerCase().includes("pessoa")) {
-        statusColor = "#ef4444"; 
+    // Configura as cores e ícones baseados na classe
+    if (classNameLower.includes("sem") && !classNameLower.includes("pessoa")) {
+        statusColor = "#ef4444"; // Vermelho
         icone = "⛔";
     } 
-    // Se a IA disse "Sem Pessoa" (Deixa cinza aguardando)
-    else if (bestClass.toLowerCase().includes("pessoa")) {
-        statusColor = "#94a3b8"; 
+    else if (classNameLower.includes("pessoa")) {
+        statusColor = "#94a3b8"; // Cinza
         icone = "⏳";
         bestClass = "Aguardando Câmera...";
     }
     
-    // Desenha o cartão de resultado na tela
+    // Verifica se deve TRAVAR a tela (Se enviou foto ou se achou uma pessoa na câmera com muita certeza)
+    if (isFromFile || (!classNameLower.includes("pessoa") && highestProb > 0.60)) {
+        isPaused = true;
+    }
+    
+    // Desenha o cartão de resultado. Note que agora ele cria um botão se estiver pausado!
     labelContainer.innerHTML = `
         <div style="background: #ffffff; padding: 25px 20px; border-radius: 16px; border-left: 8px solid ${statusColor}; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); text-align: left;">
             <strong style="color: #64748b; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">Status da Catraca</strong>
@@ -97,38 +98,33 @@ function processPrediction(prediction, isFromFile = false) {
             <div style="background: #f1f5f9; display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; color: #475569;">
                 Confiança da IA: <span>${(highestProb * 100).toFixed(1)}%</span>
             </div>
+            
+            ${isPaused ? `<button onclick="resumeScanning()" style="width: 100%; margin-top: 15px; background-color: #3b82f6; padding: 15px; font-size: 16px; border-radius: 8px; color: white; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.25);">🔄 Liberar para o Próximo</button>` : ''}
         </div>`;
-
-    // 🔴 AQUI É O SEGREDO DO "TRAVAMENTO" 🔴
-    // Trava a tela se você enviou uma foto OU se detectou uma pessoa de verdade na câmera
-    if (isFromFile || (!bestClass.toLowerCase().includes("aguardando") && highestProb > 0.60)) {
-        isPaused = true; // Para de analisar a câmera
-        
-        // Espera exatos 4 segundos e "Zera" a tela para a próxima pessoa
-        setTimeout(() => {
-            isPaused = false; // Libera a câmera de novo
-            
-            // Desenha a mensagem de PRÓXIMO
-            labelContainer.innerHTML = `
-                <div style="background: #ffffff; padding: 25px 20px; border-radius: 16px; border-left: 8px solid #3b82f6; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); text-align: left;">
-                    <h2 style="color: #3b82f6; margin: 0; font-size: 1.5rem;">🔄 PRÓXIMO!</h2>
-                    <p style="margin: 5px 0 0 0; color: #64748b;">Aproxime-se da catraca para escanear...</p>
-                </div>`;
-            
-            // Se tinha uma foto na tela (upload), ele limpa a foto
-            const preview = document.getElementById('file-preview-container');
-            if(preview) preview.innerHTML = '';
-            
-        }, 10000); // 4000 = 4 segundos. Pode aumentar se achar rápido.
-    }
 }
-// ==========================================
+
+// === FUNÇÃO QUE DESTRAVA A TELA QUANDO CLICA NO BOTÃO ===
+function resumeScanning() {
+    isPaused = false; // Manda a câmera voltar a ler
+    
+    // Apaga a foto de upload (se houver)
+    const preview = document.getElementById('file-preview-container');
+    const fileInput = document.getElementById('file-input');
+    if(preview) preview.innerHTML = '';
+    if(fileInput) fileInput.value = '';
+    
+    // Reseta a mensagem
+    labelContainer.innerHTML = `
+        <div style="background: #ffffff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); color: #64748b; text-align: center;">
+            Aproxime-se da câmera para escanear...
+        </div>`;
+}
 
 async function predict() {
     const now = Date.now();
     if (now - lastUpdateTime > 1000) {
         const prediction = await model.predict(webcam.canvas);
-        processPrediction(prediction, false); // false = veio da câmera
+        processPrediction(prediction, false); 
         lastUpdateTime = now; 
     }
 }
@@ -155,5 +151,5 @@ async function runStaticPrediction(imgElement) {
         await loadModel();
     }
     const prediction = await model.predict(imgElement);
-    processPrediction(prediction, true); // true = veio do upload de arquivo
+    processPrediction(prediction, true); 
 }
