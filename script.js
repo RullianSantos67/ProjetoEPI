@@ -2,8 +2,7 @@ const URL = "./modelo/";
 let currentFacingMode = "user"; 
 let lastUpdateTime = 0;
 let model, webcam, labelContainer, maxPredictions;
-
-// Variável que trava a catraca
+y
 let isPaused = false; 
 
 async function loadModel() {
@@ -50,7 +49,6 @@ async function loop() {
     if (webcam && webcam.canvas) {
         webcam.update(); 
         
-        // Só analisa a câmera se o sistema NÃO estiver pausado
         if (!isPaused) {
             await predict();
         }
@@ -58,7 +56,6 @@ async function loop() {
     window.requestAnimationFrame(loop);
 }
 
-// === LÓGICA DE EXIBIÇÃO E TRAVA ===
 function processPrediction(prediction, isFromFile = false) {
     let highestProb = 0;
     let bestClass = "";
@@ -70,28 +67,26 @@ function processPrediction(prediction, isFromFile = false) {
         }
     }
     
-    let statusColor = "#10b981"; // Verde
+    let statusColor = "#10b981"; 
     let icone = "✅";
     let classNameLower = bestClass.toLowerCase();
     let textoExibicao = bestClass.toUpperCase();
     
-    // Configura as cores e ícones
     if (classNameLower.includes("sem") && !classNameLower.includes("pessoa")) {
-        statusColor = "#ef4444"; // Vermelho
+        statusColor = "#ef4444";
         icone = "⛔";
     } 
     else if (classNameLower.includes("pessoa")) {
-        statusColor = "#94a3b8"; // Cinza
+        statusColor = "#94a3b8"; 
         icone = "⏳";
         textoExibicao = "AGUARDANDO CÂMERA...";
     }
     
-    // TRAVA A TELA: Se enviou foto OU se achou alguém (Com ou Sem EPI) com mais de 40% de certeza
+   
     if (isFromFile || (!classNameLower.includes("pessoa") && highestProb > 0.40)) {
         isPaused = true;
     }
-    
-    // Monta o cartão visual
+
     let htmlCartao = `
         <div style="background: #ffffff; padding: 25px 20px; border-radius: 16px; border-left: 8px solid ${statusColor}; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); text-align: left;">
             <strong style="color: #64748b; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">Status da Catraca</strong>
@@ -102,7 +97,6 @@ function processPrediction(prediction, isFromFile = false) {
                 Confiança da IA: <span>${(highestProb * 100).toFixed(1)}%</span>
             </div>`;
             
-    // Se a tela travou, adiciona o botão de liberar
     if (isPaused) {
         htmlCartao += `
             <button onclick="resumeScanning()" style="width: 100%; margin-top: 20px; background-color: #3b82f6; padding: 15px; font-size: 16px; border-radius: 8px; color: white; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.25); transition: all 0.2s ease;">
@@ -115,9 +109,8 @@ function processPrediction(prediction, isFromFile = false) {
     labelContainer.innerHTML = htmlCartao;
 }
 
-// === FUNÇÃO QUE DESTRAVA A TELA QUANDO CLICA NO BOTÃO ===
 function resumeScanning() {
-    isPaused = false; // Manda a câmera voltar a ler
+    isPaused = false; 
     
     // Apaga a foto de upload (se houver)
     const preview = document.getElementById('file-preview-container');
