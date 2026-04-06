@@ -2,7 +2,6 @@ const URL = "./modelo/";
 let currentFacingMode = "user"; 
 let lastUpdateTime = 0;
 let model, webcam, labelContainer, maxPredictions;
-y
 let isPaused = false; 
 
 async function loadModel() {
